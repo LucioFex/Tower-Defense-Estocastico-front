@@ -1,0 +1,26 @@
+; Engine configuration file.
+; Tower Defense Estocástico — Frontend (Godot 4, 2D estricto)
+; Reproduce output.json generado por el backend SimPy. Cero lógica de cálculo.
+
+config_version=5
+
+[application]
+
+config/name="Tower Defense Estocástico"
+config/description="Reproductor 2D de la simulación de colas M/M/c (lee output.json)."
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.08, 0.09, 0.12, 1)
