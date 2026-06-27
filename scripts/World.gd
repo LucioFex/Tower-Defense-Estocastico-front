@@ -1,3 +1,4 @@
+class_name TowerDefenseReplay
 extends Node2D
 ## Tower Defense Estocástico — Reproductor 2D.
 ##
@@ -6,11 +7,19 @@ extends Node2D
 ## las muestras de estado (temperatura, cola). Toda la matemática vive en el backend.
 
 # ----------------------------------------------------------------------------- #
-#  Constantes de presentación                                                    #
+#  Parámetros ajustables (editables en el Inspector — @export)                    #
 # ----------------------------------------------------------------------------- #
-const LEAK_TRAVEL := 3.0        # seg. visuales que tarda un enemigo fugado en llegar a la base
-const ENEMY_R := 9.0
-const TOWER_R := 22.0
+@export_file("*.json") var data_path := "res://output.json"
+@export_range(0.25, 64.0, 0.25) var speed := 4.0   # velocidad de reproducción
+@export var autoplay := true                        # arrancar reproduciendo
+@export var loop := true                            # reiniciar al terminar
+@export var leak_travel := 3.0                      # seg. visuales de un fugado hasta la base
+@export var enemy_radius := 9.0
+@export var tower_radius := 22.0
+
+# ----------------------------------------------------------------------------- #
+#  Paleta de colores (constantes de presentación)                                #
+# ----------------------------------------------------------------------------- #
 const COL_BG := Color(0.08, 0.09, 0.12)
 const COL_PATH := Color(0.22, 0.24, 0.30)
 const COL_COLD := Color(0.25, 0.55, 1.0)     # torre fría (azul)
@@ -26,21 +35,21 @@ const COL_TEXT := Color(0.90, 0.92, 0.96)
 #  Estado                                                                         #
 # ----------------------------------------------------------------------------- #
 var data: Dictionary = {}
-var enemies: Array = []          # tabla precomputada de enemigos
-var leak_arrivals: Array = []    # [{t_arrive, base_hp}] ordenado, para la vida de la base
+var enemies: Array[Dictionary] = []   # tabla precomputada de enemigos
+var leak_arrivals: Array[Dictionary] = []  # [{t,base_hp}] ordenado, vida de la base
 var now := 0.0                   # reloj de reproducción
 var sim_time := 1.0
 var dt_sample := 0.5
-var speed := 4.0                 # multiplicador de velocidad de reproducción
 var playing := true
 var loaded := false
+var _dirty := true               # forzar un redibujo cuando está en pausa
 
 # geometría
 var spawn_pos := Vector2.ZERO
 var base_pos := Vector2.ZERO
 var queue_anchor := Vector2.ZERO
-var path_pts: Array = []
-var towers: Array = []           # [{id,pos,range}]
+var path_pts: PackedVector2Array = PackedVector2Array()   # cacheado (sin allocations en _draw)
+var towers: Array[Dictionary] = []   # [{id,pos,range}]
 
 # parámetros para el color de temperatura
 var T_amb := 20.0
@@ -57,6 +66,7 @@ var lbl_help: Label
 
 func _ready() -> void:
 	font = ThemeDB.fallback_font
+	playing = autoplay
 	_load_data()
 	_build_hud()
 	if not loaded:
@@ -69,7 +79,7 @@ func _ready() -> void:
 #  Carga del contrato                                                            #
 # ----------------------------------------------------------------------------- #
 func _load_data() -> void:
-	var path := "res://output.json"
+	var path := data_path
 	if not FileAccess.file_exists(path):
 		push_error("No se encontró output.json en res://. Copialo desde el backend.")
 		return
@@ -136,7 +146,7 @@ func _build_enemies() -> void:
 			if e:
 				e["end_t"] = t
 				e["end_type"] = "leak"
-			leak_arrivals.append({"t": t + LEAK_TRAVEL, "base_hp": int(ev["base_hp"])})
+			leak_arrivals.append({"t": t + leak_travel, "base_hp": int(ev["base_hp"])})
 
 	enemies.clear()
 	for eid in by_id:
@@ -159,14 +169,23 @@ func _process(delta: float) -> void:
 	if playing:
 		now += delta * speed
 		if now >= sim_time:
-			now = sim_time
-			playing = false
-	_update_hud()
-	queue_redraw()
+			if loop:
+				now = 0.0          # reproducción en bucle
+			else:
+				now = sim_time
+				playing = false
+		_update_hud()
+		queue_redraw()
+	elif _dirty:
+		# en pausa: redibujar una sola vez (evita gastar GPU en un cuadro estático)
+		_update_hud()
+		queue_redraw()
+		_dirty = false
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		_dirty = true
 		match event.keycode:
 			KEY_SPACE:
 				playing = not playing
@@ -231,10 +250,10 @@ func _enemy_pos(e: Dictionary):
 	if now < st:
 		return null
 	if e["end_type"] == "leak":
-		var arrive := st + LEAK_TRAVEL
+		var arrive := st + leak_travel
 		if now > arrive:
 			return null
-		var f := (now - st) / LEAK_TRAVEL
+		var f := (now - st) / leak_travel
 		return spawn_pos.lerp(base_pos, f)
 	# killed (o aún en el sistema al cortar la simulación: end_t < 0 -> visible hasta el final)
 	var et := float(e["end_t"])
@@ -262,7 +281,7 @@ func _draw() -> void:
 
 	# camino
 	if path_pts.size() >= 2:
-		draw_polyline(PackedVector2Array(path_pts), COL_PATH, 26.0)
+		draw_polyline(path_pts, COL_PATH, 26.0)
 
 	# spawn y base
 	draw_circle(spawn_pos, 14, Color(0.5, 0.5, 0.6))
@@ -287,10 +306,10 @@ func _draw() -> void:
 			col = COL_COOLDOWN
 		draw_circle(pos, tw["range"], Color(col.r, col.g, col.b, 0.05))
 		draw_arc(pos, tw["range"], 0, TAU, 48, Color(col.r, col.g, col.b, 0.18), 1.0)
-		draw_circle(pos, TOWER_R, col)
-		draw_arc(pos, TOWER_R, 0, TAU, 24, COL_TEXT, 2.0)
+		draw_circle(pos, tower_radius, col)
+		draw_arc(pos, tower_radius, 0, TAU, 24, COL_TEXT, 2.0)
 		draw_string(font, pos + Vector2(-5, 5), str(i), 0, -1, 16, COL_BG)
-		draw_string(font, pos + Vector2(-22, -TOWER_R - 8),
+		draw_string(font, pos + Vector2(-22, -tower_radius - 8),
 			"%d°" % int(temp), 0, -1, 14, col.lightened(0.3))
 
 	# enemigos + líneas de fuego
@@ -306,8 +325,8 @@ func _draw() -> void:
 			var tw_pos: Vector2 = towers[int(e["tower"])]["pos"]
 			draw_line(tw_pos, p, COL_FIRE, 2.0)
 		var ecol: Color = COL_ENEMY_LEAK if e["end_type"] == "leak" else COL_ENEMY
-		draw_circle(p, ENEMY_R, ecol)
-		draw_arc(p, ENEMY_R, 0, TAU, 12, ecol.darkened(0.4), 1.5)
+		draw_circle(p, enemy_radius, ecol)
+		draw_arc(p, enemy_radius, 0, TAU, 12, ecol.darkened(0.4), 1.5)
 
 	# etiqueta de cola
 	draw_string(font, queue_anchor + Vector2(-40, 70),
