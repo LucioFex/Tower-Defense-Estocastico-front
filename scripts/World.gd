@@ -265,7 +265,7 @@ func _enemy_pos(e: Dictionary):
 	if stt < 0.0 or now >= stt:
 		return e["combat"]              # en combate (siendo atacado) o esperando en la línea
 	# caminando hacia la línea de combate
-	var f2 := (now - st) / max(0.001, stt - st)
+	var f2 := (now - st) / maxf(0.001, stt - st)
 	return spawn_pos.lerp(e["combat"], clampf(f2, 0.0, 1.0))
 
 
@@ -287,7 +287,7 @@ func _draw() -> void:
 	draw_circle(spawn_pos, 14, Color(0.5, 0.5, 0.6))
 	var hp := _base_hp()
 	var hp0 := int(data["stats"]["base_hp_init"])
-	var hp_frac := float(hp) / max(1, hp0)
+	var hp_frac := float(hp) / maxi(1, hp0)
 	# base como rectángulo con barra de vida
 	var bsize := Vector2(46, 90)
 	draw_rect(Rect2(base_pos - bsize / 2, bsize), COL_BASE.darkened(0.3))
