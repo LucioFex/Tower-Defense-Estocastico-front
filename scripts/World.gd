@@ -133,10 +133,21 @@ var show_chart := true
 const SHOT_PATH := "C:/Users/lucia/AppData/Local/Temp/claude/C--Users-lucia-Documents-UCEMA-anio-5-simul-sis-tp/596cfff0-d50a-42a1-ac65-0097be5b39ea/scratchpad/shot.png"
 var _shot := false
 var _shot_t := 0.0
+# styleboxes redondeados para elementos dibujados en _draw (gráfico y cartel de cola)
+var _sb_chart: StyleBoxFlat
+var _sb_banner: StyleBoxFlat
 
 
 func _ready() -> void:
 	font = ThemeDB.fallback_font
+	_sb_chart = _make_panel_box(COL_COLD)            # caja del gráfico de cola
+	_sb_banner = StyleBoxFlat.new()                  # cartel "Cola: N/K"
+	_sb_banner.bg_color = Color(0.10, 0.09, 0.07, 0.88)
+	_sb_banner.set_corner_radius_all(9)
+	_sb_banner.border_color = Color(COL_GOLD.r, COL_GOLD.g, COL_GOLD.b, 0.95)
+	_sb_banner.set_border_width_all(2)
+	_sb_banner.shadow_color = Color(0, 0, 0, 0.4)
+	_sb_banner.shadow_size = 6
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	# ambientación cálida tipo "hora dorada" (multiplica solo el mundo, no el HUD)
@@ -760,8 +771,7 @@ func _draw() -> void:
 	var qpos := queue_anchor + Vector2(0, 96)
 	var qtxt := "Cola: %d / %d" % [qn, int(data["params"]["K"])]
 	var qw := float(qtxt.length()) * 9.5 + 24.0
-	draw_rect(Rect2(qpos.x - qw * 0.5, qpos.y - 14, qw, 28), Color(0.12, 0.10, 0.08, 0.80))
-	draw_rect(Rect2(qpos.x - qw * 0.5, qpos.y - 14, qw, 28), Color(0.75, 0.62, 0.30, 0.9), false, 2.0)
+	draw_style_box(_sb_banner, Rect2(qpos.x - qw * 0.5, qpos.y - 15, qw, 30))
 	draw_string(font, qpos + Vector2(-qw * 0.5 + 12, 6), qtxt, 0, -1, 16, COL_TEXT)
 
 	# ---- gráfico de la cola en el tiempo ----
@@ -873,7 +883,7 @@ func _draw_queue_chart() -> void:
 	var h := 84.0
 	var K := float(data["params"]["K"])
 	# panel
-	draw_rect(Rect2(ox - 10, oy - 26, w + 20, h + 40), Color(0.06, 0.05, 0.08, 0.66))
+	draw_style_box(_sb_chart, Rect2(ox - 10, oy - 26, w + 20, h + 40))
 	draw_string(font, Vector2(ox, oy - 10), "Cola en el tiempo  (capacidad K=%d)" % int(K),
 		0, -1, 13, Color(0.85, 0.88, 0.95))
 	# ejes
@@ -949,12 +959,8 @@ func _build_hud() -> void:
 	_build_selector()
 
 
-func _mk_panel(pos: Vector2, size: Vector2, accent := Color(0.50, 0.55, 0.68)) -> Panel:
-	# panel redondeado, semitransparente, con acento de color a la izquierda y sombra suave
-	var p := Panel.new()
-	p.position = pos
-	p.size = size
-	p.mouse_filter = Control.MOUSE_FILTER_IGNORE   # decorativo: no robar clicks a los botones
+func _make_panel_box(accent: Color) -> StyleBoxFlat:
+	# caja redondeada, semitransparente, con acento de color a la izquierda y sombra suave
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.06, 0.10, 0.86)
 	sb.set_corner_radius_all(11)
@@ -965,7 +971,15 @@ func _mk_panel(pos: Vector2, size: Vector2, accent := Color(0.50, 0.55, 0.68)) -
 	sb.border_width_bottom = 1
 	sb.shadow_color = Color(0, 0, 0, 0.45)
 	sb.shadow_size = 9
-	p.add_theme_stylebox_override("panel", sb)
+	return sb
+
+
+func _mk_panel(pos: Vector2, size: Vector2, accent := Color(0.50, 0.55, 0.68)) -> Panel:
+	var p := Panel.new()
+	p.position = pos
+	p.size = size
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE   # decorativo: no robar clicks a los botones
+	p.add_theme_stylebox_override("panel", _make_panel_box(accent))
 	hud.add_child(p)
 	return p
 
