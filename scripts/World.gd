@@ -343,7 +343,7 @@ func _build_hud() -> void:
 	lbl_title = _mk_label(Vector2(16, 10), 22)
 	lbl_stats = _mk_label(Vector2(16, 44), 16)
 	lbl_help = _mk_label(Vector2(16, 690), 13)
-	lbl_help.text = "[Espacio] play/pausa   [←/→] velocidad   [R] reiniciar"
+	lbl_help.text = "[Espacio] play/pausa   [< / >] velocidad   [R] reiniciar"
 
 
 func _mk_label(pos: Vector2, size: int) -> Label:
