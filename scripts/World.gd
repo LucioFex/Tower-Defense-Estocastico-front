@@ -32,6 +32,10 @@ const COL_TEXT := Color(0.93, 0.94, 0.98)
 const COL_SHADOW := Color(0, 0, 0, 0.30)
 const COL_STONE := Color(0.46, 0.47, 0.52)
 const COL_STONE_DK := Color(0.30, 0.31, 0.35)
+# acentos del HUD (coinciden con el deck): cada panel se colorea por propósito
+const COL_GOLD := Color(0.91, 0.74, 0.34)
+const COL_GREEN := Color(0.37, 0.83, 0.42)
+const COL_PURPLE := Color(0.66, 0.55, 0.98)
 
 # colores en hex para el HUD (BBCode)
 const HX_COLD := "4f9eff"
@@ -103,10 +107,10 @@ var font: Font
 
 # HUD
 var hud: CanvasLayer
-var p_state: ColorRect
-var p_legend: ColorRect
-var p_compare: ColorRect
-var p_sweep: ColorRect
+var p_state: Panel
+var p_legend: Panel
+var p_compare: Panel
+var p_sweep: Panel
 var r_state: RichTextLabel
 var r_legend: RichTextLabel
 var r_compare: RichTextLabel
@@ -114,7 +118,7 @@ var r_sweep: RichTextLabel
 var lbl_help: Label
 
 # Selector de escenarios (carga corridas precomputadas en caliente)
-var p_scen: ColorRect
+var p_scen: Panel
 var scen_buttons: Array = []          # [{btn, path}]
 var current_scen_path := "res://output.json"
 
@@ -918,16 +922,16 @@ func _build_hud() -> void:
 	hud = CanvasLayer.new()
 	add_child(hud)
 
-	p_state = _mk_panel(Vector2(8, 8), Vector2(470, 182))
+	p_state = _mk_panel(Vector2(8, 8), Vector2(470, 182), COL_COLD)
 	r_state = _mk_rich(Vector2(18, 14), 452, 15)
 
-	p_legend = _mk_panel(Vector2(956, 8), Vector2(316, 174))
+	p_legend = _mk_panel(Vector2(956, 8), Vector2(316, 174), COL_PURPLE)
 	r_legend = _mk_rich(Vector2(966, 14), 300, 14)
 
-	p_compare = _mk_panel(Vector2(8, 438), Vector2(414, 252))
+	p_compare = _mk_panel(Vector2(8, 438), Vector2(414, 252), COL_GREEN)
 	r_compare = _mk_rich(Vector2(18, 444), 398, 14)
 
-	p_sweep = _mk_panel(Vector2(896, 428), Vector2(376, 264))
+	p_sweep = _mk_panel(Vector2(896, 428), Vector2(376, 264), COL_GOLD)
 	r_sweep = _mk_rich(Vector2(906, 434), 360, 13)
 
 	lbl_help = Label.new()
@@ -945,14 +949,25 @@ func _build_hud() -> void:
 	_build_selector()
 
 
-func _mk_panel(pos: Vector2, size: Vector2) -> ColorRect:
-	var r := ColorRect.new()
-	r.color = Color(0.06, 0.05, 0.08, 0.66)
-	r.position = pos
-	r.size = size
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE   # decorativo: no robar clicks a los botones
-	hud.add_child(r)
-	return r
+func _mk_panel(pos: Vector2, size: Vector2, accent := Color(0.50, 0.55, 0.68)) -> Panel:
+	# panel redondeado, semitransparente, con acento de color a la izquierda y sombra suave
+	var p := Panel.new()
+	p.position = pos
+	p.size = size
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE   # decorativo: no robar clicks a los botones
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.06, 0.10, 0.86)
+	sb.set_corner_radius_all(11)
+	sb.border_color = Color(accent.r, accent.g, accent.b, 0.85)
+	sb.border_width_left = 5
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.shadow_color = Color(0, 0, 0, 0.45)
+	sb.shadow_size = 9
+	p.add_theme_stylebox_override("panel", sb)
+	hud.add_child(p)
+	return p
 
 
 func _mk_rich(pos: Vector2, width: int, font_size: int) -> RichTextLabel:
@@ -997,7 +1012,7 @@ func _fill_legend() -> void:
 #  Selector de escenarios (carga corridas precomputadas con un click)             #
 # ----------------------------------------------------------------------------- #
 func _build_selector() -> void:
-	p_scen = _mk_panel(Vector2(482, 6), Vector2(470, 56))
+	p_scen = _mk_panel(Vector2(482, 6), Vector2(470, 56), COL_COLD)
 	var t := Label.new()
 	t.position = Vector2(862, 8)
 	t.add_theme_font_size_override("font_size", 11)
