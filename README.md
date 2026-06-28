@@ -23,6 +23,43 @@ backend SimPy) e interpola estados, posiciones y colores en una línea de tiempo
 | `Espacio` | play / pausa (reinicia si terminó) |
 | `←` / `→` | velocidad de reproducción (÷ / ×) |
 | `R` | reiniciar la reproducción |
+| `H` | mostrar / ocultar todo el HUD |
+| `L` | leyenda de colores y símbolos |
+| `T` | panel de validación **Teoría (M/M/c/K) vs Simulación** |
+| `C` | tabla de dimensionado (barrido de `c`, marca el óptimo `c*`) |
+| `G` | gráfico de la longitud de cola en el tiempo |
+
+### HUD didáctico (para la presentación)
+
+El HUD está pensado para **explicar los conceptos de teoría de colas** en vivo:
+
+- **Estado/parámetros** (arriba-izq): notación Kendall-Lee, `λ` (llegadas), `μ` (servicio/torre),
+  `c`, `K`, y estado en vivo (cola, servidores ocupados, en sistema, vida de la base).
+- **Teoría vs Simulación** (abajo-izq, tecla `T`): compara `ρ, Lq, Wq, L, W` y `P` de
+  fuga/bloqueo entre el modelo analítico y la corrida estocástica — **el corazón de la validación**.
+- **Óptimo `c*`** (abajo-der, tecla `C`): barrido de cantidad de torres, resalta el `c` elegido.
+- **Cola en el tiempo** (abajo-centro, tecla `G`): muestra la evolución estocástica de la cola.
+
+### Selector de escenarios (interactivo, arriba-centro)
+
+Botones clickeables que **cargan corridas precomputadas en caliente** (sin recalcular nada en el
+front: cada escenario es un `output.json` válido y reproducible generado por el backend). Permiten
+comparar al instante cómo cambia la cola/fuga/`Wq`:
+
+- **Carga** (`λ`): *Tranquilo* (0.20) · *Normal* (0.40) · *Saturado* (0.70).
+- **Torres `c`**: 1…6 (dimensionado; *Normal* y `3` son la corrida canónica `output.json`).
+- **Cola**: *FIFO* vs *Prioridad* (con mezcla de enemigos goblin/orco de distinto `μ`).
+
+> ⚠️ Las llegadas siguen siendo **Poisson(λ)** en todos los escenarios (no se inyectan a mano): eso
+> preserva el supuesto del modelo y la validación teoría-vs-simulación. En los escenarios *FIFO/Prioridad*
+> el servicio es heterogéneo, así que la columna "Teoría" (que asume `μ` homogéneo) es solo de referencia.
+
+Los archivos viven en `scenarios/*.json` y se generan con:
+
+```bash
+# en el repo backend, con el venv activo:
+python make_scenarios.py     # escribe ../<front>/scenarios/*.json (9 escenarios validados)
+```
 
 ## Ejecutar (editor / escritorio)
 
@@ -77,12 +114,36 @@ project.godot         configuración (2D, GL Compatibility, 1280x720)
 main.tscn             escena raíz (Node2D + World.gd)
 scripts/World.gd      carga output.json, línea de tiempo, interpolación y render 2D
 output.json           datos de la simulación (copiado del backend; contrato v1.0)
+assets/               sprites medievales CC0 (terreno, goblins, torres, castillo, flechas)
 export_presets.cfg    preset de exportación Web (PWA con cross-origin isolation)
 icon.svg              ícono
 ```
 
-Todo el dibujo es **procedural** (`_draw`): sin assets externos, mínimo peso, ideal para web y para
-correr en máquinas de bajos recursos.
+El render es **modo inmediato** (`_draw`): cada cuadro es una función pura de `now`, dibujando
+sprites con `draw_texture_rect*`. Las caminatas se animan eligiendo el frame del spritesheet en
+función del reloj. Los sprites son pixel-art liviano (KB), así que el peso sigue siendo mínimo y
+apto para web. Si falta algún asset, cada elemento cae a un dibujo procedural de respaldo.
+
+## Look & feel (qué representa cada cosa, ahora temático)
+
+- **Torres = servidores** (torres de piedra). Un **halo de calor** crece y se enrojece con la
+  temperatura (azul frío → rojo caliente); en `cooldown` se ven grises y apagadas (con una `z`).
+- **Goblins/orcos = clientes**, caminando desde la **cueva** (izquierda) hacia la línea de combate
+  a ritmo constante (la caminata visual está **desacoplada** del evento de servicio, así no
+  "aparecen/desaparecen" en el centro). Mueren con un desvanecimiento; se tiñen de rojo si se **fugan**.
+- **Flechas** con estela de viento vuelan de la torre al enemigo que está atacando (servicio en curso).
+- **Castillo = base** al final del camino, con barra de vida que baja con cada fuga.
+- **Alcance de torre**: anillo punteado estilo radar (barrido giratorio), coloreado por temperatura.
+- **Ambientación**: tinte cálido "hora dorada" + viñeta, y escenografía de fondo barata (lago con
+  patitos, árboles, ovejas, ciervo, aves). Todo en modo inmediato, sin impacto de performance.
+
+La ventana abre a **1600×900** (base 1280×720 escalada, `canvas_items`/`keep`), pensada para 1920×1080.
+
+## Créditos de assets (todos libres)
+
+- **Kenney.nl** — packs *Tower Defense (Top-Down)* y *Medieval RTS* — **CC0 1.0** (sin atribución
+  requerida). https://kenney.nl
+- **0x72 — DungeonTileset II** (goblin/orco animados) — **CC0**. https://0x72.itch.io/dungeontileset-ii
 
 ## Cómo lee el contrato (resumen)
 
