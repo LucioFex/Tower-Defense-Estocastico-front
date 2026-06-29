@@ -975,14 +975,14 @@ func _build_hud() -> void:
 	hud = CanvasLayer.new()
 	add_child(hud)
 
-	p_state = _mk_panel(Vector2(8, 8), Vector2(470, 182), COL_COLD)
-	r_state = _mk_rich(Vector2(18, 14), 452, 15)
+	p_state = _mk_panel(Vector2(8, 8), Vector2(540, 182), COL_COLD)
+	r_state = _mk_rich(Vector2(18, 14), 522, 15)
 
 	p_legend = _mk_panel(Vector2(956, 8), Vector2(316, 174), COL_PURPLE)
 	r_legend = _mk_rich(Vector2(966, 14), 300, 14)
 
-	p_compare = _mk_panel(Vector2(8, 438), Vector2(414, 252), COL_GREEN)
-	r_compare = _mk_rich(Vector2(18, 444), 398, 14)
+	p_compare = _mk_panel(Vector2(8, 408), Vector2(414, 252), COL_GREEN)
+	r_compare = _mk_rich(Vector2(18, 414), 398, 14)
 
 	p_sweep = _mk_panel(Vector2(896, 428), Vector2(376, 264), COL_GOLD)
 	r_sweep = _mk_rich(Vector2(906, 434), 360, 13)
@@ -1008,13 +1008,13 @@ func _build_hud() -> void:
 #  Controles táctiles (botones grandes para jugar desde el celular)               #
 # ----------------------------------------------------------------------------- #
 func _build_touch_controls() -> void:
-	# fila chica al pie del panel de Validación (abajo-izquierda): no tapa el mundo
-	# ni el gráfico de cola (que arranca en x=460). El panel termina en y=690.
-	var w := 92.0
-	var hgt := 26.0
-	var gap := 7.0
+	# fila al pie del panel de Validación (abajo-izquierda): no tapa el mundo
+	# ni el gráfico de cola (que arranca en x=460). El panel termina en y=660.
+	var w := 116.0
+	var hgt := 42.0
+	var gap := 8.0
 	var x := 8.0
-	var y := 692.0
+	var y := 668.0
 	btn_play = _mk_touch_btn("> Play", x, w, hgt, y, _toggle_play)
 	btn_speed = _mk_touch_btn("x4", x + (w + gap), w, hgt, y, _cycle_speed)
 	_mk_touch_btn("Reiniciar", x + (w + gap) * 2, w, hgt, y, _restart)
@@ -1027,7 +1027,7 @@ func _mk_touch_btn(text: String, x: float, w: float, hgt: float, y: float, cb: C
 	b.custom_minimum_size = Vector2(w, hgt)
 	b.size = Vector2(w, hgt)
 	b.focus_mode = Control.FOCUS_NONE        # no robar el foco al teclado (Espacio sigue andando)
-	b.add_theme_font_size_override("font_size", 13)
+	b.add_theme_font_size_override("font_size", 15)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.12, 0.13, 0.18, 0.95)
 	sb.set_corner_radius_all(8)
@@ -1222,7 +1222,7 @@ func _update_hud() -> void:
 		+ "[b]En vivo:[/b]  cola=[color=#%s]%d[/color]/%d   ocupadas=[color=#%s]%d[/color]/%d   en sistema=%d   base HP %d/%d\n" % [
 			HX_WARN, _queue_len(), int(p["K"]), HX_COLD, _busy_count(), int(p["c"]),
 			_in_system(), _base_hp(), int(st["base_hp_init"])]
-		+ "[color=#%s]Paneles:  [H] HUD   [L] leyenda   [T] teoría/sim   [C] óptimo c*   [G] gráfico[/color]" % HX_DIM)
+		+ "[color=#%s]Paneles:  [H] HUD   [L] leyenda   [T] teoría   [C] óptimo   [G] gráfico[/color]" % HX_DIM)
 
 	# ---- panel teoría vs simulación (validación) ----
 	if show_compare and hud_visible:
