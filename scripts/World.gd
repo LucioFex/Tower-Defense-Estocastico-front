@@ -975,8 +975,8 @@ func _build_hud() -> void:
 	hud = CanvasLayer.new()
 	add_child(hud)
 
-	p_state = _mk_panel(Vector2(8, 8), Vector2(540, 182), COL_COLD)
-	r_state = _mk_rich(Vector2(18, 14), 522, 15)
+	p_state = _mk_panel(Vector2(8, 8), Vector2(568, 182), COL_COLD)
+	r_state = _mk_rich(Vector2(18, 14), 548, 15)
 
 	p_legend = _mk_panel(Vector2(956, 8), Vector2(316, 174), COL_PURPLE)
 	r_legend = _mk_rich(Vector2(966, 14), 300, 14)
@@ -1222,7 +1222,7 @@ func _update_hud() -> void:
 		+ "[b]En vivo:[/b]  cola=[color=#%s]%d[/color]/%d   ocupadas=[color=#%s]%d[/color]/%d   en sistema=%d   base HP %d/%d\n" % [
 			HX_WARN, _queue_len(), int(p["K"]), HX_COLD, _busy_count(), int(p["c"]),
 			_in_system(), _base_hp(), int(st["base_hp_init"])]
-		+ "[color=#%s]Paneles:  [H] HUD   [L] leyenda   [T] teoría   [C] óptimo   [G] gráfico[/color]" % HX_DIM)
+		+ "[color=#%s]Paneles:  [H] HUD · [L] leyenda · [T] teoría · [C] óptimo · [G] gráfico[/color]" % HX_DIM)
 
 	# ---- panel teoría vs simulación (validación) ----
 	if show_compare and hud_visible:
