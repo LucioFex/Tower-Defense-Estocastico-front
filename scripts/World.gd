@@ -441,7 +441,7 @@ func _cycle_speed() -> void:
 func _sync_controls() -> void:
 	# refleja el estado actual en los labels de los botones táctiles
 	if btn_play:
-		btn_play.text = "⏸ Pausa" if playing else "▶ Play"
+		btn_play.text = "|| Pausa" if playing else "> Play"
 	if btn_speed:
 		btn_speed.text = "x%s" % ("%.2f" % speed).rstrip("0").rstrip(".")
 
@@ -994,7 +994,7 @@ func _build_hud() -> void:
 	lbl_help.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	lbl_help.add_theme_constant_override("shadow_offset_x", 1)
 	lbl_help.add_theme_constant_override("shadow_offset_y", 1)
-	lbl_help.text = "[Espacio] play/pausa     [←→] velocidad     [R] reiniciar"
+	lbl_help.text = "[Espacio] play/pausa     [Flechas] velocidad     [R] reiniciar"
 	lbl_help.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(lbl_help)
 
@@ -1015,9 +1015,9 @@ func _build_touch_controls() -> void:
 	var gap := 7.0
 	var x := 8.0
 	var y := 692.0
-	btn_play = _mk_touch_btn("▶ Play", x, w, hgt, y, _toggle_play)
+	btn_play = _mk_touch_btn("> Play", x, w, hgt, y, _toggle_play)
 	btn_speed = _mk_touch_btn("x4", x + (w + gap), w, hgt, y, _cycle_speed)
-	_mk_touch_btn("⟳ Reiniciar", x + (w + gap) * 2, w, hgt, y, _restart)
+	_mk_touch_btn("Reiniciar", x + (w + gap) * 2, w, hgt, y, _restart)
 
 
 func _mk_touch_btn(text: String, x: float, w: float, hgt: float, y: float, cb: Callable) -> Button:
@@ -1105,12 +1105,12 @@ func _apply_hud_visibility() -> void:
 
 func _fill_legend() -> void:
 	r_legend.text = ("[b]Leyenda[/b]\n"
-		+ "[color=#%s]■[/color]→[color=#%s]■[/color]  Torre: fría → caliente\n" % [HX_COLD, HX_HOT]
-		+ "[color=#%s]■[/color]  Torre en cooldown (no atiende)\n" % HX_COOL
-		+ "[color=#%s]■[/color]  Goblin = cliente (servicio/cola)\n" % HX_ENEMY
-		+ "[color=#%s]■[/color]  Goblin rojo = se fuga a la base\n" % HX_LEAK
-		+ "[color=#%s]➤[/color]  Flecha = disparo (servicio)\n" % HX_GOLD
-		+ "◌  Anillo punteado = alcance de torre")
+		+ "[color=#%s]##[/color] -> [color=#%s]##[/color]  Torre: fría -> caliente\n" % [HX_COLD, HX_HOT]
+		+ "[color=#%s]##[/color]  Torre en cooldown (no atiende)\n" % HX_COOL
+		+ "[color=#%s]##[/color]  Goblin = cliente (servicio/cola)\n" % HX_ENEMY
+		+ "[color=#%s]##[/color]  Goblin rojo = se fuga a la base\n" % HX_LEAK
+		+ "[color=#%s]->[/color]  Flecha = disparo (servicio)\n" % HX_GOLD
+		+ "( )  Anillo punteado = alcance de torre")
 
 
 # ----------------------------------------------------------------------------- #
@@ -1219,7 +1219,7 @@ func _update_hud() -> void:
 			float(p["lambda"]), float(p["mu"]), int(p["c"]), int(p["K"])]
 		+ "[b]t[/b] = %.0f / %.0f s   [color=#%s]x%.2f[/color]   %s\n" % [
 			now, sim_time, HX_GOLD, speed, stable_txt]
-		+ "[b]En vivo:[/b]  cola=[color=#%s]%d[/color]/%d   ocupadas=[color=#%s]%d[/color]/%d   en sistema=%d   base ♥ %d/%d\n" % [
+		+ "[b]En vivo:[/b]  cola=[color=#%s]%d[/color]/%d   ocupadas=[color=#%s]%d[/color]/%d   en sistema=%d   base HP %d/%d\n" % [
 			HX_WARN, _queue_len(), int(p["K"]), HX_COLD, _busy_count(), int(p["c"]),
 			_in_system(), _base_hp(), int(st["base_hp_init"])]
 		+ "[color=#%s]Paneles:  [H] HUD   [L] leyenda   [T] teoría/sim   [C] óptimo c*   [G] gráfico[/color]" % HX_DIM)
@@ -1243,7 +1243,7 @@ func _update_hud() -> void:
 			+ _row("P fuga / bloqueo", "%.2f%%" % (float(ana["Pb_finite"]) * 100.0),
 				"%.2f%%" % (float(st["leak_rate"]) * 100.0))
 			+ "[/table]\n"
-			+ "[color=#%s][i]Sim ≳ Teoría: el sobrecalentamiento de las\ntorres baja la capacidad efectiva (más espera y fuga).[/i][/color]" % HX_DIM)
+			+ "[color=#%s][i]Sim > Teoría: el sobrecalentamiento de las\ntorres baja la capacidad efectiva (más espera y fuga).[/i][/color]" % HX_DIM)
 
 	# ---- panel sweep (óptimo c*) ----
 	if show_sweep and hud_visible:
@@ -1258,10 +1258,10 @@ func _update_hud() -> void:
 			var lq_s := "%.2f" % float(row["Lq"]) if row["Lq"] != null else "[color=#%s]inest.[/color]" % HX_WARN
 			var wq_s := "%.2f" % float(row["Wq"]) if row["Wq"] != null else "—"
 			var leak_s := "%.1f%%" % (float(row["leak_rate_sim"]) * 100.0)
-			var cc := "[b][color=#%s]%d ◄[/color][/b]" % [HX_GOOD, c_val] if c_val == c_now else str(c_val)
+			var cc := "[b][color=#%s]%d <[/color][/b]" % [HX_GOOD, c_val] if c_val == c_now else str(c_val)
 			txt += _row5(cc, rho_s, lq_s, wq_s, leak_s)
 		txt += "[/table]\n"
-		txt += ("[color=#%s][i]c* = menor c estable (ρ<1) con fuga ≈ 0.\nMás torres → menos espera, mayor costo.[/i][/color]" % HX_DIM)
+		txt += ("[color=#%s][i]c* = menor c estable (ρ<1) con fuga ~ 0.\nMás torres -> menos espera, mayor costo.[/i][/color]" % HX_DIM)
 		r_sweep.text = txt
 
 
