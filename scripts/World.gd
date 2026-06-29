@@ -988,7 +988,7 @@ func _build_hud() -> void:
 	r_sweep = _mk_rich(Vector2(906, 434), 360, 13)
 
 	lbl_help = Label.new()
-	lbl_help.position = Vector2(8, 700)
+	lbl_help.position = Vector2(12, 196)   # bajo el panel de estado; deja libre el pie para los botones táctiles
 	lbl_help.add_theme_font_size_override("font_size", 13)
 	lbl_help.add_theme_color_override("font_color", COL_TEXT)
 	lbl_help.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
@@ -1008,24 +1008,26 @@ func _build_hud() -> void:
 #  Controles táctiles (botones grandes para jugar desde el celular)               #
 # ----------------------------------------------------------------------------- #
 func _build_touch_controls() -> void:
-	# fila centrada abajo, libre de los paneles de validación (izq.) y barrido (der.)
-	var w := 140.0
-	var gap := 12.0
-	var y := 648.0
-	var x0 := 640.0 - (w * 3 + gap * 2) * 0.5   # centrada en el canvas de 1280
-	btn_play = _mk_touch_btn("▶ Play", x0, w, y, _toggle_play)
-	btn_speed = _mk_touch_btn("x4", x0 + (w + gap), w, y, _cycle_speed)
-	_mk_touch_btn("⟳ Reiniciar", x0 + (w + gap) * 2, w, y, _restart)
+	# fila chica al pie del panel de Validación (abajo-izquierda): no tapa el mundo
+	# ni el gráfico de cola (que arranca en x=460). El panel termina en y=690.
+	var w := 92.0
+	var hgt := 26.0
+	var gap := 7.0
+	var x := 8.0
+	var y := 692.0
+	btn_play = _mk_touch_btn("▶ Play", x, w, hgt, y, _toggle_play)
+	btn_speed = _mk_touch_btn("x4", x + (w + gap), w, hgt, y, _cycle_speed)
+	_mk_touch_btn("⟳ Reiniciar", x + (w + gap) * 2, w, hgt, y, _restart)
 
 
-func _mk_touch_btn(text: String, x: float, w: float, y: float, cb: Callable) -> Button:
+func _mk_touch_btn(text: String, x: float, w: float, hgt: float, y: float, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.position = Vector2(x, y)
-	b.custom_minimum_size = Vector2(w, 46)   # alto cómodo para tocar con el dedo
-	b.size = Vector2(w, 46)
+	b.custom_minimum_size = Vector2(w, hgt)
+	b.size = Vector2(w, hgt)
 	b.focus_mode = Control.FOCUS_NONE        # no robar el foco al teclado (Espacio sigue andando)
-	b.add_theme_font_size_override("font_size", 18)
+	b.add_theme_font_size_override("font_size", 13)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.12, 0.13, 0.18, 0.95)
 	sb.set_corner_radius_all(8)
