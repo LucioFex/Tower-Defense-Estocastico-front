@@ -20,6 +20,9 @@ extends Node2D
 @export var leak_travel := 4.0                      # seg. visuales de un fugado hasta la base
 @export var walk_speed := 320.0                     # px/seg (sim) de caminata visual del enemigo
 
+# velocidades que recorre el botón táctil "Velocidad" (tap = más rápido, y vuelve al inicio)
+const TOUCH_SPEEDS: Array[float] = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0]
+
 # ----------------------------------------------------------------------------- #
 #  Paleta de colores                                                              #
 # ----------------------------------------------------------------------------- #
@@ -116,6 +119,9 @@ var r_legend: RichTextLabel
 var r_compare: RichTextLabel
 var r_sweep: RichTextLabel
 var lbl_help: Label
+# controles táctiles (para celular): play/pausa, velocidad, reiniciar
+var btn_play: Button
+var btn_speed: Button
 
 # Selector de escenarios (carga corridas precomputadas en caliente)
 var p_scen: Panel
@@ -376,17 +382,15 @@ func _input(event: InputEvent) -> void:
 		_dirty = true
 		match event.keycode:
 			KEY_SPACE:
-				playing = not playing
-				if now >= sim_time:
-					now = 0.0
-					playing = true
+				_toggle_play()
 			KEY_R:
-				now = 0.0
-				playing = true
+				_restart()
 			KEY_RIGHT:
 				speed = min(speed * 1.5, 64.0)
+				_sync_controls()
 			KEY_LEFT:
 				speed = max(speed / 1.5, 0.25)
+				_sync_controls()
 			KEY_H:
 				hud_visible = not hud_visible
 				_apply_hud_visibility()
@@ -401,6 +405,45 @@ func _input(event: InputEvent) -> void:
 				_apply_hud_visibility()
 			KEY_G:
 				show_chart = not show_chart
+
+
+# ----------------------------------------------------------------------------- #
+#  Acciones de control (compartidas por teclado y botones táctiles)               #
+# ----------------------------------------------------------------------------- #
+func _toggle_play() -> void:
+	playing = not playing
+	if now >= sim_time:        # si terminó, "play" reinicia desde el principio
+		now = 0.0
+		playing = true
+	_dirty = true
+	_sync_controls()
+
+
+func _restart() -> void:
+	now = 0.0
+	playing = true
+	_dirty = true
+	_sync_controls()
+
+
+func _cycle_speed() -> void:
+	# tap = siguiente velocidad más rápida del preset; al pasar el tope, vuelve al inicio
+	var nxt: float = TOUCH_SPEEDS[0]
+	for s in TOUCH_SPEEDS:
+		if s > speed + 0.001:
+			nxt = s
+			break
+	speed = nxt
+	_dirty = true
+	_sync_controls()
+
+
+func _sync_controls() -> void:
+	# refleja el estado actual en los labels de los botones táctiles
+	if btn_play:
+		btn_play.text = "⏸ Pausa" if playing else "▶ Play"
+	if btn_speed:
+		btn_speed.text = "x%s" % ("%.2f" % speed).rstrip("0").rstrip(".")
 
 
 # ----------------------------------------------------------------------------- #
@@ -957,6 +1000,52 @@ func _build_hud() -> void:
 
 	_fill_legend()
 	_build_selector()
+	_build_touch_controls()
+	_sync_controls()
+
+
+# ----------------------------------------------------------------------------- #
+#  Controles táctiles (botones grandes para jugar desde el celular)               #
+# ----------------------------------------------------------------------------- #
+func _build_touch_controls() -> void:
+	# fila centrada abajo, libre de los paneles de validación (izq.) y barrido (der.)
+	var w := 140.0
+	var gap := 12.0
+	var y := 648.0
+	var x0 := 640.0 - (w * 3 + gap * 2) * 0.5   # centrada en el canvas de 1280
+	btn_play = _mk_touch_btn("▶ Play", x0, w, y, _toggle_play)
+	btn_speed = _mk_touch_btn("x4", x0 + (w + gap), w, y, _cycle_speed)
+	_mk_touch_btn("⟳ Reiniciar", x0 + (w + gap) * 2, w, y, _restart)
+
+
+func _mk_touch_btn(text: String, x: float, w: float, y: float, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.position = Vector2(x, y)
+	b.custom_minimum_size = Vector2(w, 46)   # alto cómodo para tocar con el dedo
+	b.size = Vector2(w, 46)
+	b.focus_mode = Control.FOCUS_NONE        # no robar el foco al teclado (Espacio sigue andando)
+	b.add_theme_font_size_override("font_size", 18)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.12, 0.13, 0.18, 0.95)
+	sb.set_corner_radius_all(8)
+	sb.border_color = Color(COL_GOLD.r, COL_GOLD.g, COL_GOLD.b, 0.85)
+	sb.set_border_width_all(2)
+	sb.shadow_color = Color(0, 0, 0, 0.45)
+	sb.shadow_size = 6
+	b.add_theme_stylebox_override("normal", sb)
+	var sbh := StyleBoxFlat.new()
+	sbh.bg_color = Color(0.26, 0.22, 0.12, 0.98)
+	sbh.set_corner_radius_all(8)
+	sbh.border_color = COL_GOLD
+	sbh.set_border_width_all(2)
+	b.add_theme_stylebox_override("hover", sbh)
+	b.add_theme_stylebox_override("pressed", sbh)
+	b.add_theme_color_override("font_color", COL_TEXT)
+	b.add_theme_color_override("font_hover_color", COL_TEXT)
+	b.pressed.connect(cb)
+	hud.add_child(b)
+	return b
 
 
 func _make_panel_box(accent: Color) -> StyleBoxFlat:
